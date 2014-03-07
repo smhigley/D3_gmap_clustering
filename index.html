@@ -75,6 +75,9 @@ $(function(){
   d3.json(url, function(error, data) {
     if (error) return console.warn(error);
 
+    //do clusters here
+    //cluster should be format [cluster x, cluster y, number of items in cluster, array of indices of pts in cluster]
+
     var overlay = new google.maps.OverlayView();
 
     data = data.photos.photo;
