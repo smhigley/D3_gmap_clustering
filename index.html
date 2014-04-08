@@ -19,9 +19,6 @@ html, body, #map {
 }
 
 .stations svg {
-  width: 60px;
-  height: 20px;
-  padding-right: 100px;
   font: 10px sans-serif;
 }
 
@@ -40,16 +37,18 @@ html, body, #map {
 
 $(function(){
 
+  var cur_zoom = 7;
+
   // Load the station data. When the data comes back, create an overlay.
   var map = new google.maps.Map(d3.select("#map").node(), {
-    zoom: 7,
+    zoom: cur_zoom,
     center: new google.maps.LatLng(30.331227, -97.725019),
     mapTypeId: google.maps.MapTypeId.TERRAIN
   });
 
   //test data file
-  file = 'flickr.json';
-  max_distance = 20;
+  file = 'clusters.json';
+  raw_data = 'data.json';
 
   //call flickr api
   flickr_api_key = '5f6652a08b32dd50ae264fb3f47a9632';
@@ -62,25 +61,27 @@ $(function(){
   function coords_dist( point1, point2 ) {
     var xs = 0;
     var ys = 0;
-   
+
     xs = point2[0] - point1[0];
     xs = xs * xs;
-   
+
     ys = point2[1] - point1[1];
     ys = ys * ys;
-   
+
     return Math.sqrt( xs + ys );
   }
 
-  d3.json(url, function(error, data) {
+  d3.json(file, function(error, data) {
     if (error) return console.warn(error);
 
-    //do clusters here
-    //cluster should be format [cluster x, cluster y, number of items in cluster, array of indices of pts in cluster]
+    //save full cluster data
+    var data = data[cur_zoom];
+
+    console.log(data);
 
     var overlay = new google.maps.OverlayView();
 
-    data = data.photos.photo;
+    //data = data.photos.photo;
 
     //set bounds based on data's max lat and long
     var latmax = d3.max(data, function(d){ return d.latitude }),
@@ -91,16 +92,20 @@ $(function(){
         northEast = new google.maps.LatLng(latmax, longmax),
         new_bounds = new google.maps.LatLngBounds(southWest, northEast);
 
+    // map marker radius to values between 6px and 20px
+    var marker_radius = d3.scale.linear()
+      .domain( d3.extent(data, function(d) { return d.size; }) )
+      .range([6, 20]);
+
     // Add the container when the overlay is added to the map.
     overlay.onAdd = function() {
       map.fitBounds(new_bounds);
-      var layer = d3.select(this.getPanes().overlayLayer).append("div")
+      var layer = d3.select(this.getPanes().overlayMouseTarget).append("div")
           .attr("class", "stations");
 
       // Draw each marker as a separate SVG element.
       // We could use a single SVG, but what size would it have?
       overlay.draw = function() {
-        clusters = [];
         var projection = this.getProjection(),
             padding = 10;
 
@@ -109,20 +114,22 @@ $(function(){
             .each(display) // update existing markers
           .enter().append("svg:svg")
             .each(display)
-            .attr("class", "marker"); 
+            .attr("width", function(d) { return marker_radius(d.size)*2 + padding*2 })
+            .attr("height", function(d) { return marker_radius(d.size)*2 + padding*2 })
+            .attr("class", "marker");
 
         // Add a circle.
         marker.append("svg:circle")
-            .attr("r", 4.5)
-            .attr("cx", padding)
-            .attr("cy", padding);
+            .attr("r", function(d) { return marker_radius(d.size); })
+            .attr("cx", function(d) { return marker_radius(d.size) + padding })
+            .attr("cy", function(d) { return marker_radius(d.size) + padding });
 
         // Add a label.
         marker.append("svg:text")
             .attr("x", padding + 7)
             .attr("y", padding)
             .attr("dy", ".31em")
-            .text(function(d) { return d.title; });
+            .text(function(d) { return d.size; });
 
         function display(d) {
           //console.log(d);
