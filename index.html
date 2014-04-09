@@ -37,13 +37,16 @@ html, body, #map {
 
 $(function(){
 
-  var cur_zoom = 7;
+  var cur_zoom = 7,
+      prev_zoom;
 
   // Load the station data. When the data comes back, create an overlay.
   var map = new google.maps.Map(d3.select("#map").node(), {
     zoom: cur_zoom,
     center: new google.maps.LatLng(30.331227, -97.725019),
-    mapTypeId: google.maps.MapTypeId.TERRAIN
+    mapTypeId: google.maps.MapTypeId.TERRAIN,
+    maxZoom: 12,
+    minZoom: 4
   });
 
   //test data file
@@ -107,6 +110,7 @@ $(function(){
       // Draw each marker as a separate SVG element.
       // We could use a single SVG, but what size would it have?
       overlay.draw = function() {
+        prev_zoom = cur_zoom;
         cur_zoom = map.getZoom();
         data = clusters[cur_zoom];
 
@@ -124,7 +128,8 @@ $(function(){
             .each(display)
             .attr("width", function(d) { return marker_radius(d.size)*2 + padding*2 })
             .attr("height", function(d) { return marker_radius(d.size)*2 + padding*2 })
-            .attr("class", "marker");
+            .attr("class", "marker")
+            .attr("id", function(d) { return })
 
         marker.exit()
               .remove();
@@ -140,13 +145,13 @@ $(function(){
 
         // Add a label.
         marker.append("svg:text")
-            .attr("x", function(d) { return marker_radius(d.size) + padding - 3 })
+            .attr("x", function(d) { return marker_radius(d.size) + padding })
             .attr("y", function(d) { return marker_radius(d.size) + padding })
+            .style("text-anchor", "middle")
             .attr("dy", ".31em")
             .text(function(d) { return d.size; });
 
         function display(d) {
-          //console.log(d);
           d = new google.maps.LatLng(d.latitude, d.longitude);
           d = projection.fromLatLngToDivPixel(d);
           //console.log(d3.select(this));
@@ -154,6 +159,13 @@ $(function(){
           return d3.select(this)
               .style("left", (d.x - padding) + "px")
               .style("top", (d.y - padding) + "px");
+        }
+
+        function animateIn(d) {
+          el = d.select(this);
+          //only animate position if we're zooming in
+          if(cur_zoom > prev_zoom) {
+          }
         }
 
       };

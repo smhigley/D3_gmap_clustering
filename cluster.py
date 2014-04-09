@@ -78,10 +78,40 @@ def distance(origin, destination):
 def average(n1, n2):
   return (n1 + n2)/2
 
-# let's try this
+def mode(list):
+  modes = {}
+  for item in list:
+    modes[item] = list.count(item)
+
+  mode = max(modes, key=modes.get)
+  return mode
+
+#return index of parent cluster
+def parent_cluster(zoom, d):
+  points = d['points']
+  parent_zoom_data = clusters[zoom-1]
+  parents = []
+
+  for point in points:
+    # find which cluster of the parent zoom level the point is in
+    for c in parent_zoom_data:
+      if point in c['points']:
+        parents.append(parent_zoom_data.index(c))
+        break
+
+  parent_cluster_index = mode(parents)
+  d['parent'] = parent_cluster_index
+
+# build cluster data
 for zoom in range(min_zoom, max_zoom + 1):
   clusters[zoom] = cluster(data, zoom)
 
+  #add index of parent cluster to each cluster in the zoom level, if we're not at the min zoom
+  if(zoom != min_zoom):
+    for c in clusters[zoom]:
+      parent_cluster(zoom, c)
+
+# now write data to a file
 with open('clusters.json', 'w') as outfile:
   json.dump(clusters, outfile)
 
