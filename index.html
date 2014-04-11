@@ -50,15 +50,7 @@ $(function(){
   });
 
   //test data file
-  file = 'clusters.json';
-  raw_data = 'data.json';
-
-  //call flickr api
-  flickr_api_key = '5f6652a08b32dd50ae264fb3f47a9632';
-  flickr_api_secret = '6826da1b61cf3f39';
-  //url vars
-  tags = 'cat'
-  url = 'http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=' + flickr_api_key + '&tags=' + tags + '&woe_id=2347602&has_geo=1&extras=geo&format=json&nojsoncallback=1&per_page=100';
+  file = 'http://dl.dropboxusercontent.com/s/iw0y5g2uyi1x32i/clusters.json';
 
   //function to caculate dist btw points. Args in format [x, y]
   function coords_dist( point1, point2 ) {
@@ -81,11 +73,7 @@ $(function(){
     var clusters = data,
         data = clusters[cur_zoom];
 
-    console.log(data);
-
     var overlay = new google.maps.OverlayView();
-
-    //data = data.photos.photo;
 
     //set bounds based on data's max lat and long
     var latmax = d3.max(data, function(d){ return d.latitude }),
@@ -112,9 +100,8 @@ $(function(){
       overlay.draw = function() {
         prev_zoom = cur_zoom;
         cur_zoom = map.getZoom();
+        console.log("zoom is " + cur_zoom);
         data = clusters[cur_zoom];
-
-        console.log(cur_zoom);
 
         var projection = this.getProjection(),
             padding = 10;
@@ -124,26 +111,29 @@ $(function(){
             .data(data, function(d) { return d3.values(d); })
             .each(display); // update existing markers
 
+        // add new markers, with some custom transitions
         marker.enter().append("svg:svg")
             .each(display)
             .attr("width", function(d) { return marker_radius(d.size)*2 + padding*2 })
             .attr("height", function(d) { return marker_radius(d.size)*2 + padding*2 })
             .attr("class", "marker")
-            .attr("id", function(d) { return })
+            .each(animateIn);
 
+        // remove markers, add some exit transitions later
         marker.exit()
+              .each(display)
+              .each(animateOut)
+              .transition()
+              .delay(800)
               .remove();
 
         // Add a circle.
         marker.append("svg:circle")
-            .attr("r", 0)
+            .attr("r", function(d) { return marker_radius(d.size); })
             .attr("cx", function(d) { return marker_radius(d.size) + padding })
-            .attr("cy", function(d) { return marker_radius(d.size) + padding })
-            .transition()
-            .duration(600)
-            .attr("r", function(d) { return marker_radius(d.size); });
+            .attr("cy", function(d) { return marker_radius(d.size) + padding });
 
-        // Add a label.
+        // Add a label in the center of the circle
         marker.append("svg:text")
             .attr("x", function(d) { return marker_radius(d.size) + padding })
             .attr("y", function(d) { return marker_radius(d.size) + padding })
@@ -152,19 +142,68 @@ $(function(){
             .text(function(d) { return d.size; });
 
         function display(d) {
-          d = new google.maps.LatLng(d.latitude, d.longitude);
-          d = projection.fromLatLngToDivPixel(d);
-          //console.log(d3.select(this));
-          //console.log("x-pos is " + d.x + " y-pos is " + d.y);
+          pos = map_pixel(d.latitude, d.longitude);
+
           return d3.select(this)
-              .style("left", (d.x - padding) + "px")
-              .style("top", (d.y - padding) + "px");
+              .style("left", (pos.x - padding) + "px")
+              .style("top", (pos.y - padding) + "px");
         }
 
+        function map_pixel(lat, long) {
+          pos = new google.maps.LatLng(lat, long);
+          pos = projection.fromLatLngToDivPixel(pos);
+
+          return pos;
+        }
+
+        //animate the markers from the position of their "parent" cluster to their actual position
         function animateIn(d) {
-          el = d.select(this);
+          var el = d3.select(this);
           //only animate position if we're zooming in
           if(cur_zoom > prev_zoom) {
+            var parent_data = clusters[cur_zoom - 1][d.parent],
+                parent_map_pos = map_pixel(parent_data.latitude, parent_data.longitude);
+
+            self_pos = map_pixel(d.latitude, d.longitude);
+            return d3.select(this).style('left', (parent_map_pos.x - padding) + 'px')
+              .style('top', (parent_map_pos.y - padding) + 'px')
+              .attr('opacity', 0)
+              .transition()
+              .duration(800)
+              .style("left", (self_pos.x - padding) + "px")
+              .style("top", (self_pos.y - padding) + "px")
+              .attr('opacity', 1);
+          } else {
+            // fade in if zooming out
+            return d3.select(this).attr('opacity', 0)
+              .transition()
+              .duration(800)
+              .attr('opacity', 1);
+          }
+        }
+
+        // exit animation
+        // animate position of markers from current position to parent position
+        function animateOut(d) {
+          el = d3.select(this);
+          //only animate position if zooming out
+          if(cur_zoom < prev_zoom) {
+            console.log("new element " + (cur_zoom));
+            console.log(d);
+            var parent_data = clusters[cur_zoom][d.parent],
+                parent_map_pos = map_pixel(parent_data.latitude, parent_data.longitude);
+            console.log(parent_data);
+            return d3.select(this).transition()
+              .duration(800)
+              .style('left', (parent_map_pos.x - padding) + 'px')
+              .style('top', (parent_map_pos.y - padding) + 'px')
+              .attr('opacity', 0);
+          } else {
+            // if zooming in, fade out opacity
+            return d3.select(this).transition()
+              .delay(400)
+              .duration(400)
+              .attr('opacity', 0);
           }
         }
 
