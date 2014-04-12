@@ -4,8 +4,8 @@ import math
 
 # get data from flickr
 # build flickr url
-flickr_api_key = '5f6652a08b32dd50ae264fb3f47a9632'
-flickr_api_secret = '6826da1b61cf3f39'
+flickr_api_key = 'your api key here'
+flickr_api_secret = 'your secret here'
 tags = 'cat'
 url = 'http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=' + flickr_api_key + '&tags=' + tags + '&woe_id=2347602&has_geo=1&extras=geo&format=json&nojsoncallback=1&per_page=100';
 
