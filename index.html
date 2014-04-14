@@ -384,6 +384,8 @@ $(function(){
             .attr("width", function(d) { return marker_radius(d.size)*2 + padding*2 })
             .attr("height", function(d) { return marker_radius(d.size)*2 + padding*2 })
             .attr("class", "marker")
+            .style("margin-top", function(d) {return "-" + (marker_radius(d.size) + padding)/2 + "px"; })
+            .style("margin-left", function(d) {return "-" + (marker_radius(d.size) + padding)/2 + "px"; })
             .each(animateIn);
 
         // remove markers, add some exit transitions later
