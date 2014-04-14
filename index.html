@@ -23,10 +23,11 @@ html, body, #map {
 }
 
 .stations circle {
-  fill: #55CADB;
-  stroke: rgba(85,202,219,0.5);
+  fill: #3d7590;
+  stroke: rgba(61,117,144,0.5);
   stroke-width: 5px;
 }
+.stations text { fill: #fff; }
 
     </style>
   </head>
@@ -37,20 +38,285 @@ html, body, #map {
 
 $(function(){
 
+  var styles = [
+  {
+    featureType:'landscape',
+    elementType:'all',
+    stylers:[
+      {
+        hue:'#e5e3df'
+      },
+      {
+        saturation:-62
+      },
+      {
+        lightness:0
+      },
+      {
+        visibility:'on'
+      }
+    ]
+  },
+  {
+    featureType:'water',
+    elementType:'all',
+    stylers:[
+      {
+        hue:'#aad3d4'
+      },
+      {
+        saturation:-27
+      },
+      {
+        lightness:-1
+      },
+      {
+        visibility:'on'
+      }
+    ]
+  },
+  {
+    featureType:'road.highway',
+    elementType:'geometry',
+    stylers:[
+      {
+        hue:'#dfdbd4'
+      },
+      {
+        saturation:-85
+      },
+      {
+        lightness:59
+      },
+      {
+        visibility:'simplified'
+      }
+    ]
+  },
+  {
+    featureType:'road.arterial',
+    elementType:'all',
+    stylers:[
+      {
+        hue:'#eeeceb'
+      },
+      {
+        saturation:-92
+      },
+      {
+        lightness:68
+      },
+      {
+        visibility:'simplified'
+      }
+    ]
+  },
+  {
+    featureType:'poi.park',
+    elementType:'all',
+    stylers:[
+      {
+        hue:'#cadb9b'
+      },
+      {
+        saturation:7
+      },
+      {
+        lightness:-6
+      },
+      {
+        visibility:'on'
+      }
+    ]
+  },
+  {
+    featureType:'road.local',
+    elementType:'all',
+    stylers:[
+      {
+        hue:'#ffffff'
+      },
+      {
+        saturation:-100
+      },
+      {
+        lightness:100
+      },
+      {
+        visibility:'off'
+      }
+    ]
+  },
+  {
+    featureType:'poi.school',
+    elementType:'geometry',
+    stylers:[
+      {
+        hue:'#dfdbd4'
+      },
+      {
+        saturation:-69
+      },
+      {
+        lightness:13
+      },
+      {
+        visibility:'off'
+      }
+    ]
+  },
+  {
+    featureType:'poi.business',
+    elementType:'all',
+    stylers:[
+      {
+        hue:'#dfdbd4'
+      },
+      {
+        saturation:-2
+      },
+      {
+        lightness:2
+      },
+      {
+        visibility:'off'
+      }
+    ]
+  },
+  {
+    featureType:'water',
+    elementType:'all',
+    stylers:[
+
+    ]
+  },
+  {
+    featureType:'poi.medical',
+    elementType:'geometry',
+    stylers:[
+      {
+        hue:'#d2cec8'
+      },
+      {
+        saturation:-76
+      },
+      {
+        lightness:-8
+      },
+      {
+        visibility:'off'
+      }
+    ]
+  },
+  {
+    featureType:'road',
+    elementType:'labels',
+    stylers:[
+      {
+        hue:'#ffffff'
+      },
+      {
+        saturation:-100
+      },
+      {
+        lightness:100
+      },
+      {
+        visibility:'off'
+      }
+    ]
+  },
+  {
+    featureType:'transit',
+    elementType:'labels',
+    stylers:[
+      {
+        hue:'#ffffff'
+      },
+      {
+        saturation:0
+      },
+      {
+        lightness:100
+      },
+      {
+        visibility:'off'
+      }
+    ]
+  },
+  {
+    featureType:'poi.attraction',
+    elementType:'geometry',
+    stylers:[
+      {
+        hue:'#d2cec8'
+      },
+      {
+        saturation:-77
+      },
+      {
+        lightness:11
+      },
+      {
+        visibility:'simplified'
+      }
+    ]
+  },
+  {
+    featureType:'landscape.man_made',
+    elementType:'geometry',
+    stylers:[
+      {
+        hue:'#d2cec8'
+      },
+      {
+        saturation:-63
+      },
+      {
+        lightness:-10
+      },
+      {
+        visibility:'off'
+      }
+    ]
+  },
+  {
+    featureType:'road.local',
+    elementType:'all',
+    stylers:[
+      {
+        hue:'#e2e1dd'
+      },
+      {
+        saturation:-92
+      },
+      {
+        lightness:-12
+      },
+      {
+        visibility:'simplified'
+      }
+    ]
+  }
+];
+
   var cur_zoom = 7,
-      prev_zoom;
+      prev_zoom = cur_zoom;
+
 
   // Load the station data. When the data comes back, create an overlay.
   var map = new google.maps.Map(d3.select("#map").node(), {
     zoom: cur_zoom,
     center: new google.maps.LatLng(30.331227, -97.725019),
-    mapTypeId: google.maps.MapTypeId.TERRAIN,
+    'styles': styles,
+    //mapTypeId: google.maps.MapTypeId.TERRAIN,
     maxZoom: 12,
-    minZoom: 4
+    minZoom: 5
   });
 
   //test data file
-  file = 'http://dl.dropboxusercontent.com/s/iw0y5g2uyi1x32i/clusters.json';
+  //file = 'http://dl.dropboxusercontent.com/s/iw0y5g2uyi1x32i/clusters.json';
+  file = 'clusters.json';
 
   //function to caculate dist btw points. Args in format [x, y]
   function coords_dist( point1, point2 ) {
@@ -87,11 +353,11 @@ $(function(){
     // map marker radius to values between 6px and 20px
     var marker_radius = d3.scale.linear()
       .domain( d3.extent(data, function(d) { return d.size; }) )
-      .range([6, 20]);
+      .range([8, 16]);
 
     // Add the container when the overlay is added to the map.
     overlay.onAdd = function() {
-      map.fitBounds(new_bounds);
+      //map.fitBounds(new_bounds);
       var layer = d3.select(this.getPanes().overlayMouseTarget).append("div")
           .attr("class", "stations");
 
@@ -100,7 +366,8 @@ $(function(){
       overlay.draw = function() {
         prev_zoom = cur_zoom;
         cur_zoom = map.getZoom();
-        console.log("zoom is " + cur_zoom);
+
+        console.log("zoom is " + cur_zoom + ", prev zoom is " + prev_zoom);
         data = clusters[cur_zoom];
 
         var projection = this.getProjection(),
@@ -122,10 +389,7 @@ $(function(){
         // remove markers, add some exit transitions later
         marker.exit()
               .each(display)
-              .each(animateOut)
-              .transition()
-              .delay(800)
-              .remove();
+              .each(animateOut);
 
         // Add a circle.
         marker.append("svg:circle")
@@ -142,7 +406,7 @@ $(function(){
             .text(function(d) { return d.size; });
 
         function display(d) {
-          pos = map_pixel(d.latitude, d.longitude);
+          var pos = map_pixel(d.latitude, d.longitude);
 
           return d3.select(this)
               .style("left", (pos.x - padding) + "px")
@@ -150,7 +414,7 @@ $(function(){
         }
 
         function map_pixel(lat, long) {
-          pos = new google.maps.LatLng(lat, long);
+          var pos = new google.maps.LatLng(lat, long);
           pos = projection.fromLatLngToDivPixel(pos);
 
           return pos;
@@ -159,51 +423,65 @@ $(function(){
         //animate the markers from the position of their "parent" cluster to their actual position
         function animateIn(d) {
           var el = d3.select(this);
-          //only animate position if we're zooming in
-          if(cur_zoom > prev_zoom) {
-            var parent_data = clusters[cur_zoom - 1][d.parent],
-                parent_map_pos = map_pixel(parent_data.latitude, parent_data.longitude);
+          // check if element's "zoom" data is equal to the current zoom
+          if( d.zoom == cur_zoom ) {
+            //only animate position if we're zooming in
+            if( cur_zoom > prev_zoom ) {
+              var parent_data = clusters[cur_zoom - 1][d.parent],
+                  parent_map_pos = map_pixel(parent_data.latitude, parent_data.longitude);
 
-            self_pos = map_pixel(d.latitude, d.longitude);
-            return d3.select(this).style('left', (parent_map_pos.x - padding) + 'px')
-              .style('top', (parent_map_pos.y - padding) + 'px')
-              .attr('opacity', 0)
-              .transition()
-              .duration(800)
-              .style("left", (self_pos.x - padding) + "px")
-              .style("top", (self_pos.y - padding) + "px")
-              .attr('opacity', 1);
-          } else {
-            // fade in if zooming out
-            return d3.select(this).attr('opacity', 0)
-              .transition()
-              .duration(800)
-              .attr('opacity', 1);
-          }
+              self_pos = map_pixel(d.latitude, d.longitude);
+              return d3.select(this).style('left', (parent_map_pos.x - padding) + 'px')
+                .style('top', (parent_map_pos.y - padding) + 'px')
+                .attr('opacity', 0)
+                .transition()
+                .duration(800)
+                .style("left", (self_pos.x - padding) + "px")
+                .style("top", (self_pos.y - padding) + "px")
+                .attr('opacity', 1);
+            } else {
+              // fade in if zooming out
+              return d3.select(this).attr('opacity', 0)
+                .transition()
+                .duration(800)
+                .attr('opacity', 1);
+            }
+          } // end zoom check. don't transition if el is not in the current zoom bucket.
         }
 
         // exit animation
         // animate position of markers from current position to parent position
         function animateOut(d) {
           el = d3.select(this);
-          //only animate position if zooming out
-          if(cur_zoom < prev_zoom) {
-            console.log("new element " + (cur_zoom));
-            console.log(d);
-            var parent_data = clusters[cur_zoom][d.parent],
+
+          // check if elements "zoom" data attribute is equal to cur_zoom + 1
+          //only animate position if zooming out and the element is from one zoom level down
+          if( d.zoom == (cur_zoom+1) && cur_zoom < prev_zoom ) {
+            var parent_data = data[d.parent],
                 parent_map_pos = map_pixel(parent_data.latitude, parent_data.longitude);
-            console.log(parent_data);
+
             return d3.select(this).transition()
               .duration(800)
               .style('left', (parent_map_pos.x - padding) + 'px')
               .style('top', (parent_map_pos.y - padding) + 'px')
-              .attr('opacity', 0);
-          } else {
-            // if zooming in, fade out opacity
+              .attr('opacity', 0)
+              .each("end",function() {
+                d3.select(this).remove();
+               });
+          } else if(d.zoom == (cur_zoom-1) && cur_zoom > prev_zoom ) {
+            // if zooming in and element is from one zoom level up, fade out opacity
+            console.log("removing element during zoom in");
             return d3.select(this).transition()
               .delay(400)
               .duration(400)
-              .attr('opacity', 0);
+              .attr('opacity', 0)
+              .each("end",function() {
+                d3.select(this).remove();
+               });
+          } else {
+            // if element is not from the immediately preceding zoom level, remove immediately
+            console.log("remove immediately");
+            return d3.select(this).remove();
           }
         }
 
